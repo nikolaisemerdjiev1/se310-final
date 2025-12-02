@@ -21,16 +21,19 @@ import java.io.PrintWriter;
  * - Template Method Pattern: Defines the skeleton of HTTP handling
  * - DRY Principle: Common JSON/HTTP logic centralized here
  * - Single Responsibility: Handles HTTP communication concerns
- * - Open/Closed Principle: Open for extension (new DTOs), closed for modification
- * - Dependency Inversion: Depends on JsonSerializable abstraction, not concrete DTOs
+ * - Open/Closed Principle: Open for extension (new DTOs), closed for
+ * modification
+ * - Dependency Inversion: Depends on JsonSerializable abstraction, not concrete
+ * DTOs
  *
- * @author  Sergey L. Sundukovskiy
+ * @author Sergey L. Sundukovskiy
  * @version 1.0
- * @since   2025-11-11
+ * @since 2025-11-11
  */
 public abstract class BaseServlet extends HttpServlet {
 
-    //TODO: Implement Template Method Pattern for handling HTTP requests and responses
+    // TODO: Implement Template Method Pattern for handling HTTP requests and
+    // responses
 
     /**
      * Read the request body as a string.
@@ -51,43 +54,38 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     /**
-     * Send a JSON response with HTTP 200 OK status.
+     * Send a JSON response with the given status code.
      *
-     * @param response The HTTP response
-     * @param object The object to serialize to JSON
-     * @throws IOException If writing fails
-     */
-    protected void sendJsonResponse(HttpServletResponse response, Object object) throws IOException {
-        sendJsonResponse(response, object, HttpServletResponse.SC_OK);
-    }
-
-    /**
-     * Send a JSON response with a specified HTTP status code.
-     *
-     * This method follows the Open/Closed Principle and Dependency Inversion Principle:
-     * - It depends on the JsonSerializable abstraction, not concrete DTO implementations
-     * - New DTOs can be added without modifying this code
-     * - BaseServlet has no knowledge of specific DTO types
-     *
-     * @param response The HTTP response
-     * @param object The object to serialize to JSON (preferably a JsonSerializable)
-     * @param statusCode The HTTP status code (200, 201, 400, etc.)
+     * @param response   The HTTP response
+     * @param object     The object to serialize to JSON
+     * @param statusCode HTTP status code to send
      * @throws IOException If writing fails
      */
     protected void sendJsonResponse(HttpServletResponse response, Object object, int statusCode) throws IOException {
-        //TODO: Implement Template Method Pattern for sending JSON responses
+        response.setStatus(statusCode);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        String json;
+        if (object instanceof JsonSerializable serializable) {
+            json = serializable.toJson();
+        } else {
+            json = JsonHelper.toJson(object);
+        }
+
+        try (PrintWriter writer = response.getWriter()) {
+            writer.write(json);
+            writer.flush();
+        }
     }
 
     /**
      * Send an error response with a message.
      * Uses ErrorResponse's own toJson() method, following the DTO pattern.
-     *
-     * @param response The HTTP response
-     * @param statusCode The HTTP status code (400, 404, 500, etc.)
-     * @param message The error message
-     * @throws IOException If writing fails
      */
     protected void sendErrorResponse(HttpServletResponse response, int statusCode, String message) throws IOException {
+        ErrorResponse error = new ErrorResponse(statusCode, message);
+        sendJsonResponse(response, error, statusCode);
     }
 
     /**
@@ -112,7 +110,7 @@ public abstract class BaseServlet extends HttpServlet {
      * Simple error response object for consistent error formatting.
      */
     @Getter
-    private static class ErrorResponse {
+    private static class ErrorResponse implements JsonSerializable {
         private final int status;
         private final String message;
         private final long timestamp;
@@ -122,5 +120,11 @@ public abstract class BaseServlet extends HttpServlet {
             this.message = message;
             this.timestamp = System.currentTimeMillis();
         }
+
+        @Override
+        public String toJson() {
+            return JsonHelper.toJson(this);
+        }
     }
+
 }

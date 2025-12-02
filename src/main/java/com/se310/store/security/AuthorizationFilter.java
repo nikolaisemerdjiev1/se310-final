@@ -16,13 +16,13 @@ import java.io.IOException;
  * This filter was previously used to ensure that only ADMIN users could perform
  * Store and User management operations, but this requirement has been removed.
  *
- * @author  Sergey L. Sundukovskiy
+ * @author Sergey L. Sundukovskiy
  * @version 1.0
- * @since   2025-11-11
+ * @since 2025-11-11
  */
 public class AuthorizationFilter implements Filter {
 
-    //TODO: Only ADMIN users can perform operations associated with Store building
+    // TODO: Only ADMIN users can perform operations associated with Store building
 
     /**
      * Initialize filter
@@ -45,19 +45,18 @@ public class AuthorizationFilter implements Filter {
         // (should be set by AuthenticationFilter)
         User user = (User) request.getAttribute("authenticatedUser");
 
-        if (user == null) {
-            // No authenticated user - should not happen if AuthenticationFilter runs first
-            httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        // Check if user has ADMIN role
+        if (!user.isAdmin()) {
+            httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
             httpResponse.setContentType("application/json");
             httpResponse.setCharacterEncoding("UTF-8");
-            httpResponse.getWriter().write("{\"error\": \"Unauthorized - Authentication required\"}");
+            httpResponse.getWriter().write("{\"error\": \"Forbidden - ADMIN role required\"}");
             return;
         }
 
-        //TODO: Check if user has ADMIN role
-
         // User is authorized - continue with the filter chain
         chain.doFilter(request, response);
+
     }
 
     /**

@@ -18,16 +18,17 @@ import java.util.Optional;
  * This implementation uses H2 embedded database for persistent data storage.
  * The database file is stored in the user's home directory under .smartstore/
  *
- * All database-specific logic (SQLException handling, ResultSet mapping) is encapsulated here.
+ * All database-specific logic (SQLException handling, ResultSet mapping) is
+ * encapsulated here.
  * Repositories are database-agnostic and work only with domain objects.
  *
- * @author  Sergey L. Sundukovskiy
+ * @author Sergey L. Sundukovskiy
  * @version 1.0
- * @since   2025-11-11
+ * @since 2025-11-11
  */
 public class DataManager {
 
-    //TODO: Implement Singleton pattern with double-checked locking
+    // TODO: Implement Singleton pattern with double-checked locking
 
     private static volatile DataManager instance;
     private Connection connection;
@@ -43,9 +44,16 @@ public class DataManager {
         initializeDatabase();
     }
 
-    //TODO: Thread-safe singleton implementation with double-checked locking
+    // TODO: Thread-safe singleton implementation with double-checked locking
     public static DataManager getInstance() {
-        return new DataManager();
+        if (instance == null) {
+            synchronized (DataManager.class) {
+                if (instance == null) {
+                    instance = new DataManager();
+                }
+            }
+        }
+        return instance;
     }
 
     /**
@@ -77,78 +85,78 @@ public class DataManager {
         try (Statement stmt = connection.createStatement()) {
             // Users table
             stmt.execute("CREATE TABLE IF NOT EXISTS users (" +
-                "email VARCHAR(255) PRIMARY KEY," +
-                "password VARCHAR(255) NOT NULL," +
-                "name VARCHAR(255) NOT NULL," +
-                "role VARCHAR(50) DEFAULT 'USER'" +
-                ")");
+                    "email VARCHAR(255) PRIMARY KEY," +
+                    "password VARCHAR(255) NOT NULL," +
+                    "name VARCHAR(255) NOT NULL," +
+                    "role VARCHAR(50) DEFAULT 'USER'" +
+                    ")");
 
             // Stores table
             stmt.execute("CREATE TABLE IF NOT EXISTS stores (" +
-                "id VARCHAR(255) PRIMARY KEY," +
-                "address VARCHAR(500)," +
-                "description VARCHAR(1000)" +
-                ")");
+                    "id VARCHAR(255) PRIMARY KEY," +
+                    "address VARCHAR(500)," +
+                    "description VARCHAR(1000)" +
+                    ")");
 
             // Products table
             stmt.execute("CREATE TABLE IF NOT EXISTS products (" +
-                "id VARCHAR(255) PRIMARY KEY," +
-                "name VARCHAR(255) NOT NULL," +
-                "description VARCHAR(1000)," +
-                "size VARCHAR(100)," +
-                "category VARCHAR(100)," +
-                "price DOUBLE," +
-                "temperature VARCHAR(50)" +
-                ")");
+                    "id VARCHAR(255) PRIMARY KEY," +
+                    "name VARCHAR(255) NOT NULL," +
+                    "description VARCHAR(1000)," +
+                    "size VARCHAR(100)," +
+                    "category VARCHAR(100)," +
+                    "price DOUBLE," +
+                    "temperature VARCHAR(50)" +
+                    ")");
 
             // Customers table
             stmt.execute("CREATE TABLE IF NOT EXISTS customers (" +
-                "id VARCHAR(255) PRIMARY KEY," +
-                "first_name VARCHAR(255)," +
-                "last_name VARCHAR(255)," +
-                "customer_type VARCHAR(50)," +
-                "email VARCHAR(255)," +
-                "account_address VARCHAR(500)," +
-                "store_id VARCHAR(255)," +
-                "aisle_number VARCHAR(50)," +
-                "last_seen TIMESTAMP" +
-                ")");
+                    "id VARCHAR(255) PRIMARY KEY," +
+                    "first_name VARCHAR(255)," +
+                    "last_name VARCHAR(255)," +
+                    "customer_type VARCHAR(50)," +
+                    "email VARCHAR(255)," +
+                    "account_address VARCHAR(500)," +
+                    "store_id VARCHAR(255)," +
+                    "aisle_number VARCHAR(50)," +
+                    "last_seen TIMESTAMP" +
+                    ")");
 
             // Baskets table
             stmt.execute("CREATE TABLE IF NOT EXISTS baskets (" +
-                "id VARCHAR(255) PRIMARY KEY," +
-                "customer_id VARCHAR(255)," +
-                "store_id VARCHAR(255)" +
-                ")");
+                    "id VARCHAR(255) PRIMARY KEY," +
+                    "customer_id VARCHAR(255)," +
+                    "store_id VARCHAR(255)" +
+                    ")");
 
             // Basket items table
             stmt.execute("CREATE TABLE IF NOT EXISTS basket_items (" +
-                "basket_id VARCHAR(255)," +
-                "product_id VARCHAR(255)," +
-                "count INT," +
-                "PRIMARY KEY (basket_id, product_id)" +
-                ")");
+                    "basket_id VARCHAR(255)," +
+                    "product_id VARCHAR(255)," +
+                    "count INT," +
+                    "PRIMARY KEY (basket_id, product_id)" +
+                    ")");
 
             // Inventory table
             stmt.execute("CREATE TABLE IF NOT EXISTS inventory (" +
-                "id VARCHAR(255) PRIMARY KEY," +
-                "store_id VARCHAR(255)," +
-                "aisle_number VARCHAR(50)," +
-                "shelf_id VARCHAR(50)," +
-                "capacity INT," +
-                "count INT," +
-                "product_id VARCHAR(255)," +
-                "inventory_type VARCHAR(50)" +
-                ")");
+                    "id VARCHAR(255) PRIMARY KEY," +
+                    "store_id VARCHAR(255)," +
+                    "aisle_number VARCHAR(50)," +
+                    "shelf_id VARCHAR(50)," +
+                    "capacity INT," +
+                    "count INT," +
+                    "product_id VARCHAR(255)," +
+                    "inventory_type VARCHAR(50)" +
+                    ")");
 
             // Devices table
             stmt.execute("CREATE TABLE IF NOT EXISTS devices (" +
-                "id VARCHAR(255) PRIMARY KEY," +
-                "name VARCHAR(255)," +
-                "device_type VARCHAR(100)," +
-                "store_id VARCHAR(255)," +
-                "aisle_number VARCHAR(50)" +
-                ")");
+                    "id VARCHAR(255) PRIMARY KEY," +
+                    "name VARCHAR(255)," +
+                    "device_type VARCHAR(100)," +
+                    "store_id VARCHAR(255)," +
+                    "aisle_number VARCHAR(50)" +
+                    ")");
 
             // Insert default users if not exists
             insertDefaultUsers();
@@ -163,7 +171,8 @@ public class DataManager {
         String checkSql = "SELECT COUNT(*) FROM users WHERE email = ?";
         String insertSql = "INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)";
 
-        // Check and insert admin user - credentials loaded from properties, password encrypted
+        // Check and insert admin user - credentials loaded from properties, password
+        // encrypted
         try (PreparedStatement checkStmt = getConnection().prepareStatement(checkSql)) {
             checkStmt.setString(1, ConfigLoader.getAdminEmail());
             ResultSet rs = checkStmt.executeQuery();
@@ -178,7 +187,8 @@ public class DataManager {
             }
         }
 
-        // Check and insert regular user - credentials loaded from properties, password encrypted
+        // Check and insert regular user - credentials loaded from properties, password
+        // encrypted
         try (PreparedStatement checkStmt = getConnection().prepareStatement(checkSql)) {
             checkStmt.setString(1, ConfigLoader.getUserEmail());
             ResultSet rs = checkStmt.executeQuery();
@@ -326,7 +336,8 @@ public class DataManager {
         return stmt.executeQuery();
     }
 
-    // ==================== USER OPERATIONS (DOMAIN OBJECT BASED) ====================
+    // ==================== USER OPERATIONS (DOMAIN OBJECT BASED)
+    // ====================
 
     /**
      * Find user by email - Returns domain object
@@ -354,7 +365,7 @@ public class DataManager {
         List<User> users = new ArrayList<>();
         String sql = "SELECT email, password, name, role FROM users";
         try (PreparedStatement stmt = getConnection().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 users.add(mapResultSetToUser(rs));
             }
@@ -406,11 +417,10 @@ public class DataManager {
      */
     private User mapResultSetToUser(ResultSet rs) throws SQLException {
         return new User(
-            rs.getString("email"),
-            rs.getString("password"),
-            rs.getString("name"),
-            UserRole.valueOf(rs.getString("role"))
-        );
+                rs.getString("email"),
+                rs.getString("password"),
+                rs.getString("name"),
+                UserRole.valueOf(rs.getString("role")));
     }
 
     // ==================== STORE OPERATIONS ====================
@@ -468,7 +478,8 @@ public class DataManager {
         return stmt.executeQuery();
     }
 
-    // ==================== STORE OPERATIONS (DOMAIN OBJECT BASED) ====================
+    // ==================== STORE OPERATIONS (DOMAIN OBJECT BASED)
+    // ====================
 
     /**
      * Find store by ID - Returns domain object
@@ -496,7 +507,7 @@ public class DataManager {
         List<Store> stores = new ArrayList<>();
         String sql = "SELECT id, address, description FROM stores";
         try (PreparedStatement stmt = getConnection().prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+                ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 stores.add(mapResultSetToStore(rs));
             }
@@ -548,10 +559,9 @@ public class DataManager {
      */
     private Store mapResultSetToStore(ResultSet rs) throws SQLException {
         return new Store(
-            rs.getString("id"),
-            rs.getString("address"),
-            rs.getString("description")
-        );
+                rs.getString("id"),
+                rs.getString("address"),
+                rs.getString("description"));
     }
 
     // ==================== PRODUCT OPERATIONS ====================
@@ -561,7 +571,8 @@ public class DataManager {
         return executeQuery(sql, productId);
     }
 
-    public void saveProduct(String id, String name, String description, String size, String category, double price, String temperature) throws SQLException {
+    public void saveProduct(String id, String name, String description, String size, String category, double price,
+            String temperature) throws SQLException {
         String updateSql = "UPDATE products SET name = ?, description = ?, size = ?, category = ?, price = ?, temperature = ? WHERE id = ?";
         int rowsAffected = executeUpdate(updateSql, name, description, size, category, price, temperature, id);
         if (rowsAffected == 0) {
@@ -595,12 +606,15 @@ public class DataManager {
         return executeQuery(sql, customerId);
     }
 
-    public void saveCustomer(String id, String firstName, String lastName, String customerType, String email, String address, String storeId, String aisleNumber, Timestamp lastSeen) throws SQLException {
+    public void saveCustomer(String id, String firstName, String lastName, String customerType, String email,
+            String address, String storeId, String aisleNumber, Timestamp lastSeen) throws SQLException {
         String updateSql = "UPDATE customers SET first_name = ?, last_name = ?, customer_type = ?, email = ?, account_address = ?, store_id = ?, aisle_number = ?, last_seen = ? WHERE id = ?";
-        int rowsAffected = executeUpdate(updateSql, firstName, lastName, customerType, email, address, storeId, aisleNumber, lastSeen, id);
+        int rowsAffected = executeUpdate(updateSql, firstName, lastName, customerType, email, address, storeId,
+                aisleNumber, lastSeen, id);
         if (rowsAffected == 0) {
             String insertSql = "INSERT INTO customers (id, first_name, last_name, customer_type, email, account_address, store_id, aisle_number, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            executeUpdate(insertSql, id, firstName, lastName, customerType, email, address, storeId, aisleNumber, lastSeen);
+            executeUpdate(insertSql, id, firstName, lastName, customerType, email, address, storeId, aisleNumber,
+                    lastSeen);
         }
     }
 
@@ -666,7 +680,7 @@ public class DataManager {
 
     public void addBasketItem(String basketId, String productId, int count) throws SQLException {
         String sql = "INSERT INTO basket_items (basket_id, product_id, count) VALUES (?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE count = count + ?";
+                "ON DUPLICATE KEY UPDATE count = count + ?";
         executeUpdate(sql, basketId, productId, count, count);
     }
 
@@ -697,9 +711,11 @@ public class DataManager {
         return executeQuery(sql, inventoryId);
     }
 
-    public void saveInventory(String id, String storeId, String aisleNumber, String shelfId, int capacity, int count, String productId, String inventoryType) throws SQLException {
+    public void saveInventory(String id, String storeId, String aisleNumber, String shelfId, int capacity, int count,
+            String productId, String inventoryType) throws SQLException {
         String updateSql = "UPDATE inventory SET store_id = ?, aisle_number = ?, shelf_id = ?, capacity = ?, count = ?, product_id = ?, inventory_type = ? WHERE id = ?";
-        int rowsAffected = executeUpdate(updateSql, storeId, aisleNumber, shelfId, capacity, count, productId, inventoryType, id);
+        int rowsAffected = executeUpdate(updateSql, storeId, aisleNumber, shelfId, capacity, count, productId,
+                inventoryType, id);
         if (rowsAffected == 0) {
             String insertSql = "INSERT INTO inventory (id, store_id, aisle_number, shelf_id, capacity, count, product_id, inventory_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             executeUpdate(insertSql, id, storeId, aisleNumber, shelfId, capacity, count, productId, inventoryType);
@@ -731,7 +747,8 @@ public class DataManager {
         return executeQuery(sql, deviceId);
     }
 
-    public void saveDevice(String id, String name, String deviceType, String storeId, String aisleNumber) throws SQLException {
+    public void saveDevice(String id, String name, String deviceType, String storeId, String aisleNumber)
+            throws SQLException {
         String updateSql = "UPDATE devices SET name = ?, device_type = ?, store_id = ?, aisle_number = ? WHERE id = ?";
         int rowsAffected = executeUpdate(updateSql, name, deviceType, storeId, aisleNumber, id);
         if (rowsAffected == 0) {

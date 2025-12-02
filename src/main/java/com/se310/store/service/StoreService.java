@@ -9,17 +9,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * This is the main service of the system implementing Command API for processing CLI commands and
+ * This is the main service of the system implementing Command API for
+ * processing CLI commands and
  * Service API for processing Store events
  *
- * @author  Sergey L. Sundukovskiy
+ * @author Sergey L. Sundukovskiy
  * @version 1.0
  * @since 2025-09-25
  **/
 public class StoreService {
 
-    //TODO: Implement management of Store related information in the persistent storage
-    //TODO: Implement Service Layer Pattern
+    // TODO: Implement management of Store related information in the persistent
+    // storage
+    // TODO: Implement Service Layer Pattern
 
     private static final Map<String, Store> storeMap;
     private static final Map<String, Customer> customerMap;
@@ -56,7 +58,10 @@ public class StoreService {
      * Load all data from database into memory maps
      */
     private void loadAllDataFromDatabase() {
-        //TODO: Load store data into the maps
+        // Load all stores from the repository into the in-memory map
+        for (Store store : storeRepository.findAll()) {
+            storeMap.put(store.getId(), store);
+        }
     }
 
     /**
@@ -71,40 +76,40 @@ public class StoreService {
         deviceMap.clear();
     }
 
-
     public Store provisionStore(String storeId, String name, String address, String token)
             throws StoreException {
 
         Store store = new Store(storeId, address, name);
 
-        //If Store already exists throw and exception
+        // If Store already exists throw and exception
         if (storeMap.putIfAbsent(storeId, store) != null) {
             throw new StoreException("Provision Store", "Store Already Exists");
         }
 
-        //TODO: Persist Store to database
+        // Persist Store to database
+        storeRepository.save(store);
 
         return store;
     }
 
     public Store showStore(String storeId, String token) throws StoreException {
 
-        //If Store does not exist throw and exception
+        // If Store does not exist throw and exception
         Store store = storeMap.get(storeId);
-        if(store == null)
+        if (store == null)
             throw new StoreException("Show Store", "Store Does Not Exist");
 
         return store;
     }
 
     public Aisle provisionAisle(String storeId, String aisleNumber, String name, String description,
-                                AisleLocation location, String token) throws StoreException {
+            AisleLocation location, String token) throws StoreException {
 
         Store store = storeMap.get(storeId);
         Aisle aisle;
 
-        //Check to see if Store already exists;
-        if(store == null){
+        // Check to see if Store already exists;
+        if (store == null) {
             throw new StoreException("Provision Aisle", "Store Does Not Exist");
         } else {
             aisle = store.addAisle(aisleNumber, name, description, location);
@@ -116,11 +121,11 @@ public class StoreService {
     public Aisle showAisle(String storeId, String aisleNumber, String token) throws StoreException {
         Store store = storeMap.get(storeId);
         Aisle aisle;
-        //Check to see if Store exists
-        if(store == null){
+        // Check to see if Store exists
+        if (store == null) {
             throw new StoreException("Show Aisle", "Store Does Not Exist");
         } else {
-            //Check to see if Aisle already exists
+            // Check to see if Aisle already exists
             aisle = store.getAisle(aisleNumber);
             if (aisle == null) {
                 throw new StoreException("Show Aisle", "Aisle Does Not Exist");
@@ -130,27 +135,27 @@ public class StoreService {
     }
 
     public Shelf provisionShelf(String storeId, String aisleNumber, String shelfId, String name,
-                                ShelfLevel level, String description, Temperature temperature, String token) throws StoreException {
+            ShelfLevel level, String description, Temperature temperature, String token) throws StoreException {
 
         Store store = storeMap.get(storeId);
         Shelf shelf;
 
-        //Check to see if Store exists
-        if(store == null){
+        // Check to see if Store exists
+        if (store == null) {
             throw new StoreException("Provision Shelf", "Store Does Not Exist");
         } else {
             Aisle aisle = store.getAisle(aisleNumber);
-            //Check to see if Aisle exists
-            if (aisle == null){
+            // Check to see if Aisle exists
+            if (aisle == null) {
                 throw new StoreException("Provision Shelf", "Aisle Does Not Exist");
             } else {
                 shelf = aisle.getShelf(shelfId);
-                //Check to see if Shelf exists
-                if(shelf != null){
+                // Check to see if Shelf exists
+                if (shelf != null) {
                     throw new StoreException("Provision Shelf", "Shelf Already Exists");
                 }
 
-                //Add Shelf to the Aisle
+                // Add Shelf to the Aisle
                 shelf = aisle.addShelf(shelfId, name, level, description, temperature);
             }
         }
@@ -161,18 +166,18 @@ public class StoreService {
         Store store = storeMap.get(storeId);
         Shelf shelf;
 
-        //Check to see if Store exists
-        if(store == null){
+        // Check to see if Store exists
+        if (store == null) {
             throw new StoreException("Show Shelf", "Store Does Not Exist");
         } else {
-            //Check to see if Aisle exists
+            // Check to see if Aisle exists
             Aisle aisle = store.getAisle(aisleNumber);
-            if (aisle == null){
+            if (aisle == null) {
                 throw new StoreException("Show Shelf", "Aisle Does Not Exist");
             } else {
-                //Check to see if Shelf exists
+                // Check to see if Shelf exists
                 shelf = aisle.getShelf(shelfId);
-                if(shelf == null){
+                if (shelf == null) {
                     throw new StoreException("Show Shelf", "Shelf Does Not Exist");
                 }
             }
@@ -181,50 +186,51 @@ public class StoreService {
     }
 
     public Inventory provisionInventory(String inventoryId, String storeId, String aisleNumber, String shelfId,
-                                        int capacity, int count, String productId, InventoryType type, String token) throws StoreException {
+            int capacity, int count, String productId, InventoryType type, String token) throws StoreException {
 
         Store store = storeMap.get(storeId);
         Product product = productMap.get(productId);
         Inventory inventory;
 
-        //Check to see if Store exists
-        if(store == null){
+        // Check to see if Store exists
+        if (store == null) {
             throw new StoreException("Provision Inventory", "Store Does Not Exist");
         } else {
-            //Check to see if Aisle exists
+            // Check to see if Aisle exists
             Aisle aisle = store.getAisle(aisleNumber);
-            if (aisle == null){
+            if (aisle == null) {
                 throw new StoreException("Provision Inventory", "Aisle Does Not Exist");
             } else {
-                //Check to see if Shelf exists
+                // Check to see if Shelf exists
                 Shelf shelf = aisle.getShelf(shelfId);
-                if(shelf == null){
+                if (shelf == null) {
                     throw new StoreException("Provision Inventory", "Shelf Does Not Exist");
-                } else if(product == null){
-                    //Check to see if Product exists
+                } else if (product == null) {
+                    // Check to see if Product exists
                     throw new StoreException("Provision Inventory", "Product Does Not Exist");
-                } else if(!shelf.getTemperature().equals(product.getTemperature())){
-                    //Make sure that Product Temperature and Shelf Temperature are consistent
+                } else if (!shelf.getTemperature().equals(product.getTemperature())) {
+                    // Make sure that Product Temperature and Shelf Temperature are consistent
                     throw new StoreException("Provision Inventory", "Product and Shelf Temperature " +
                             "Is Not Consistent");
                 }
 
-                //Add Inventory to the Shelf
+                // Add Inventory to the Shelf
                 inventory = shelf.addInventory(inventoryId, storeId, aisleNumber, shelfId,
                         capacity, count, productId, type);
 
-                //Add Inventory to the global Inventory Map
+                // Add Inventory to the global Inventory Map
                 inventoryMap.put(inventoryId, inventory);
 
-                //Add Inventory to the Store
+                // Add Inventory to the Store
                 store.addInventory(inventory);
 
                 // Persist to database
                 try {
                     dataManager.saveInventory(inventoryId, storeId, aisleNumber, shelfId,
-                                             capacity, count, productId, type.name());
+                            capacity, count, productId, type.name());
                 } catch (Exception e) {
-                    throw new StoreException("Provision Inventory", "Failed to save inventory to database: " + e.getMessage());
+                    throw new StoreException("Provision Inventory",
+                            "Failed to save inventory to database: " + e.getMessage());
                 }
             }
         }
@@ -235,7 +241,7 @@ public class StoreService {
     public Inventory showInventory(String inventoryId, String token) throws StoreException {
 
         Inventory inventory = inventoryMap.get(inventoryId);
-        //Check to see if Inventory exists
+        // Check to see if Inventory exists
         if (inventory == null)
             throw new StoreException("Show Inventory", "Inventory Does Not Exist");
         return inventory;
@@ -243,50 +249,49 @@ public class StoreService {
 
     public Inventory updateInventory(String inventoryId, int count, String token) throws StoreException {
         Inventory inventory = inventoryMap.get(inventoryId);
-        //Check to see if Inventory exists
+        // Check to see if Inventory exists
         if (inventory == null)
             throw new StoreException("Update Inventory", "Inventory Does Not Exist");
 
-        //Update Inventory count
+        // Update Inventory count
         inventory.updateInventory(count);
 
-        //TODO: Persist inventory update to database
+        // TODO: Persist inventory update to database
 
         return inventory;
     }
 
     public Product provisionProduct(String productId, String name, String description, String size, String category,
-                                    double price, Temperature temperature, String token) throws StoreException {
+            double price, Temperature temperature, String token) throws StoreException {
         Product product = new Product(productId, name, description, size, category, price, temperature);
 
-        //Check to see if Product already exists
+        // Check to see if Product already exists
         if (productMap.putIfAbsent(productId, product) != null)
             throw new StoreException("Provision Product", "Product Already Exists");
 
-        //TODO: Persist to database
+        // TODO: Persist to database
 
         return product;
     }
 
     public Product showProduct(String productId, String token) throws StoreException {
         Product product = productMap.get(productId);
-        //Check to see if Product exists
+        // Check to see if Product exists
         if (product == null)
             throw new StoreException("Show Product", "Product Does Not Exist");
         return product;
     }
 
-
     public Customer provisionCustomer(String customerId, String firstName, String lastName,
-                                      CustomerType type, String email, String address, String token)
+            CustomerType type, String email, String address, String token)
             throws StoreException {
 
         Customer customer = new Customer(customerId, firstName, lastName, type, email, address);
-        //Check to see if the Customer already exists
-        if(customerMap.putIfAbsent(customerId, customer) != null)
+        // Check to see if the Customer already exists
+        if (customerMap.putIfAbsent(customerId, customer) != null)
             throw new StoreException("Provision Customer", "Customer Already Exists");
 
-        //TODO: Persist to database
+        // TODO: Persist to database
 
         return customer;
     }
@@ -296,44 +301,46 @@ public class StoreService {
         Store store = storeMap.get(storeId);
         Customer customer;
 
-        //Check to see if the Store exists
-        if(store == null){
+        // Check to see if the Store exists
+        if (store == null) {
             throw new StoreException("Update Customer", "Store Does Not Exist");
         } else {
-            //Check to see if Aisle exists
+            // Check to see if Aisle exists
             Aisle aisle = store.getAisle(aisleNumber);
-            if (aisle == null){
+            if (aisle == null) {
                 throw new StoreException("Update Customer", "Aisle Does Not Exist");
             } else {
-                //Check to see if Customer exists
+                // Check to see if Customer exists
                 customer = customerMap.get(customerId);
-                if(customer == null){
+                if (customer == null) {
                     throw new StoreException("Update Customer", "Customer Does Not Exist");
                 }
             }
         }
 
-        //Check to see if Customer changing Stores
-        if(customer.getStoreLocation() != null && !customer.getStoreLocation().getStoreId().equals(storeId)){
-            //Check to see if Customer already exists in other Stores
-            Map<Store, Customer> customerStores  = storeMap.entrySet()
+        // Check to see if Customer changing Stores
+        if (customer.getStoreLocation() != null && !customer.getStoreLocation().getStoreId().equals(storeId)) {
+            // Check to see if Customer already exists in other Stores
+            Map<Store, Customer> customerStores = storeMap.entrySet()
                     .stream()
-                    .filter(tempStore -> (tempStore.getValue().getCustomer(customerId) != null && tempStore.getValue().getCustomer(customerId).getId().equals(customerId)))
-                    .collect(Collectors.toMap(Map.Entry::getValue, tempStore -> tempStore.getValue().
-                            getCustomer(customerId)));
+                    .filter(tempStore -> (tempStore.getValue().getCustomer(customerId) != null
+                            && tempStore.getValue().getCustomer(customerId).getId().equals(customerId)))
+                    .collect(Collectors.toMap(Map.Entry::getValue,
+                            tempStore -> tempStore.getValue().getCustomer(customerId)));
 
-            //If Customer exist in other stores remove him/her
+            // If Customer exist in other stores remove him/her
             customerStores.forEach((key, value) -> key.removeCustomer(customer));
 
-            //Before Customer can change the Store he/she must clear the Basket
-            if(customer.getBasket() != null)
+            // Before Customer can change the Store he/she must clear the Basket
+            if (customer.getBasket() != null)
                 customer.getBasket().clearBasket();
 
-            //If the Customer moves to a different Store clear out the basket and the time seen
+            // If the Customer moves to a different Store clear out the basket and the time
+            // seen
             customer.assignBasket(null);
             customer.setLastSeen(null);
 
-            //Add Customer to another store
+            // Add Customer to another store
             store.addCustomer(customer);
         } else {
 
@@ -341,16 +348,16 @@ public class StoreService {
             customer.setLastSeen(new Date(System.currentTimeMillis()));
         }
 
-        //TODO: Persist customer location update to database
+        // TODO: Persist customer location update to database
 
         return customer;
     }
 
     public Customer showCustomer(String customerId, String token) throws StoreException {
 
-        //Check to see if the Customer exists
+        // Check to see if the Customer exists
         Customer customer = customerMap.get(customerId);
-        if(customer == null)
+        if (customer == null)
             throw new StoreException("Show Customer", "Customer Does Not Exist");
 
         return customer;
@@ -359,11 +366,11 @@ public class StoreService {
     public Basket provisionBasket(String basketId, String token) throws StoreException {
 
         Basket basket = new Basket(basketId);
-        //Check if Basket already exists
-        if(basketMap.putIfAbsent(basketId, basket) != null)
+        // Check if Basket already exists
+        if (basketMap.putIfAbsent(basketId, basket) != null)
             throw new StoreException("Provision Basket", "Basket Already Exists");
 
-        //TODO: Persist Basket to database
+        // TODO: Persist Basket to database
 
         return basket;
     }
@@ -373,25 +380,25 @@ public class StoreService {
         Customer customer = customerMap.get(customerId);
         Basket basket = basketMap.get(basketId);
 
-        //Check to see Customer and the Basket already exist
-        if(customer == null){
+        // Check to see Customer and the Basket already exist
+        if (customer == null) {
             throw new StoreException("Assign Customer Basket", "Customer Does Not Exist");
         } else {
-            if (basket == null){
+            if (basket == null) {
                 throw new StoreException("Assign Customer Basket", "Basket Does Not Exist");
             }
         }
 
-        //Assign Basket to the Customer
+        // Assign Basket to the Customer
         customer.assignBasket(basket);
-        //Keep the global copy of all the baskets
+        // Keep the global copy of all the baskets
         basketMap.put(basketId, basket);
 
         Store store = storeMap.get(customerMap.get(customerId).getStoreLocation().getStoreId());
 
-        //Associate basket with the customer
+        // Associate basket with the customer
         basket.setCustomer(customer);
-        //Create bidirectional association between Store and the Basket
+        // Create bidirectional association between Store and the Basket
         basket.setStore(store);
         store.addBasket(basket);
 
@@ -402,12 +409,12 @@ public class StoreService {
         Customer customer = customerMap.get(customerId);
         Basket basket;
 
-        //Check if Customer exists
-        if(customer == null){
+        // Check if Customer exists
+        if (customer == null) {
             throw new StoreException("Get Customer Basket", "Customer Does Not Exist");
         } else {
             basket = customer.getBasket();
-            //Check to see if Customer has been assigned the Basket
+            // Check to see if Customer has been assigned the Basket
             if (basket == null) {
                 throw new StoreException("Get Customer Basket", "Customer Does Not Have a Basket");
             }
@@ -420,35 +427,38 @@ public class StoreService {
         Basket basket = basketMap.get(basketId);
         Product product = productMap.get(productId);
 
-        //Check to see if basket already exists product we are trying to add to the basket
-        //exists as well and basket has been assigned to the customer
-        if(basket == null){
+        // Check to see if basket already exists product we are trying to add to the
+        // basket
+        // exists as well and basket has been assigned to the customer
+        if (basket == null) {
             throw new StoreException("Add Basket Product", "Basket Does Not Exist");
-        } else if(product == null){
+        } else if (product == null) {
             throw new StoreException("Add Basket Product", "Product Does Not Exist");
-        } else if(basket.getCustomer() == null){
+        } else if (basket.getCustomer() == null) {
             throw new StoreException("Add Basket Product", "Basket Has Not Being Assigned");
         }
-        //Add a product to the basket
+        // Add a product to the basket
         basket.addProduct(productId, count);
 
         return basket;
     }
 
-    public Basket removeBasketProduct(String basketId, String productId, int count, String token) throws StoreException {
+    public Basket removeBasketProduct(String basketId, String productId, int count, String token)
+            throws StoreException {
         Basket basket = basketMap.get(basketId);
         Product product = productMap.get(productId);
 
-        //Check to see if basket already exists product we are trying to add to the basket
-        //exists as well and basket has been assigned to the customer
-        if(basket == null){
+        // Check to see if basket already exists product we are trying to add to the
+        // basket
+        // exists as well and basket has been assigned to the customer
+        if (basket == null) {
             throw new StoreException("Remove Basket Product", "Basket Does Not Exist");
-        } else if(product == null){
+        } else if (product == null) {
             throw new StoreException("Remove Basket Product", "Product Does Not Exist");
-        } else if(basket.getCustomer() == null){
+        } else if (basket.getCustomer() == null) {
             throw new StoreException("Remove Basket Product", "Basket Has Not Being Assigned");
         }
-        //Remove product from the basket
+        // Remove product from the basket
         basket.removeProduct(productId, count);
 
         return basket;
@@ -458,10 +468,11 @@ public class StoreService {
 
         Basket basket = basketMap.get(basketId);
 
-        //Check to see if basket already exists and basket has been assigned to the customer
-        if(basket == null){
+        // Check to see if basket already exists and basket has been assigned to the
+        // customer
+        if (basket == null) {
             throw new StoreException("Clear Basket", "Basket Does Not Exist");
-        } else if(basket.getCustomer() == null){
+        } else if (basket.getCustomer() == null) {
             throw new StoreException("Clear Basket", "Basket Has Not Being Assigned");
         }
         basket.clearBasket();
@@ -472,59 +483,59 @@ public class StoreService {
     public Basket showBasket(String basketId, String token) throws StoreException {
         Basket basket = basketMap.get(basketId);
 
-        //Check to see if basket already exists
-        if(basket == null){
+        // Check to see if basket already exists
+        if (basket == null) {
             throw new StoreException("Show Basket Product", "Basket Does Not Exist");
         }
-        
+
         // Return basket even if not assigned to a customer
         // This allows viewing empty/unassigned baskets
         return basket;
     }
 
     public Device provisionDevice(String deviceId, String name, String deviceType, String storeId,
-                                  String aisleNumber, String token) throws StoreException {
+            String aisleNumber, String token) throws StoreException {
 
         Store store = storeMap.get(storeId);
         Device device;
         StoreLocation storeLocation;
 
-        //Check to see if store exists
-        if(store == null){
+        // Check to see if store exists
+        if (store == null) {
             throw new StoreException("Provision Device", "Store Does Not Exist");
         } else {
 
-            //Check to see if aisle exists
+            // Check to see if aisle exists
             Aisle aisle = store.getAisle(aisleNumber);
-            if (aisle == null){
+            if (aisle == null) {
                 throw new StoreException("Provision Device", "Aisle Does Not Exist");
             } else {
                 storeLocation = new StoreLocation(storeId, aisleNumber);
 
-                //Check to see if device already exists
+                // Check to see if device already exists
                 device = deviceMap.get(deviceId);
-                if(device != null){
+                if (device != null) {
                     throw new StoreException("Provision Device", "Device Already Exists");
                 }
 
-                //Determine wha type of device we are trying to add
+                // Determine wha type of device we are trying to add
                 for (SensorType sensor : SensorType.values()) {
-                    if (sensor.name().equals(deviceType)){
-                        device = new Sensor (deviceId, name, storeLocation, deviceType);
+                    if (sensor.name().equals(deviceType)) {
+                        device = new Sensor(deviceId, name, storeLocation, deviceType);
                     }
                 }
                 for (ApplianceType appliance : ApplianceType.values()) {
-                    if (appliance.name().equals(deviceType)){
+                    if (appliance.name().equals(deviceType)) {
                         device = new Appliance(deviceId, name, storeLocation, deviceType);
                     }
                 }
 
-                //Add device to the global map
-                deviceMap.put(deviceId,device);
-                //Add device to the local store
+                // Add device to the global map
+                deviceMap.put(deviceId, device);
+                // Add device to the local store
                 store.addDevice(device);
 
-                //TODO: Persist Device to database
+                // TODO: Persist Device to database
             }
         }
         return device;
@@ -533,8 +544,8 @@ public class StoreService {
     public Device showDevice(String deviceId, String token) throws StoreException {
         Device device = deviceMap.get(deviceId);
 
-        //Check to see if device exists
-        if(device == null)
+        // Check to see if device exists
+        if (device == null)
             throw new StoreException("Show Device", "Device Does Not Exist");
 
         return device;
@@ -543,8 +554,8 @@ public class StoreService {
     public void raiseEvent(String deviceId, String event, String token) throws StoreException {
         Device device = deviceMap.get(deviceId);
 
-        //Check to see if a device exists
-        if(device == null){
+        // Check to see if a device exists
+        if (device == null) {
             throw new StoreException("Raise Event", "Device Does Not Exist");
         }
         device.processEvent(event);
@@ -555,8 +566,8 @@ public class StoreService {
 
         Appliance appliance = (Appliance) deviceMap.get(deviceId);
 
-        //Check to see if the appliance exists
-        if(appliance == null){
+        // Check to see if the appliance exists
+        if (appliance == null) {
             throw new StoreException("Issue Command", "Device Does Not Exist");
         }
         appliance.processCommand(command);
@@ -585,7 +596,8 @@ public class StoreService {
             store.setAddress(address);
         }
 
-        //TODO: Update Store data in database
+        // Update Store data in database
+        storeRepository.save(store);
 
         return store;
     }
@@ -599,6 +611,8 @@ public class StoreService {
             throw new StoreException("Delete Store", "Store Does Not Exist");
         }
 
-        //TODO: Delete data from database
+        // Delete store from database as well
+        storeRepository.deleteById(storeId);
+
     }
 }

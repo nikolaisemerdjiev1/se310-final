@@ -15,20 +15,18 @@ import java.util.stream.Collectors;
 
 /**
  * REST API controller for Store operations
- * Implements full CRUD operations using DTO Pattern
  *
- * DTOs are used to:
- * - Simplify API responses by excluding complex nested collections
- * - Provide a clean separation between internal domain models and external API contracts
- * - Improve JSON serialization performance by excluding transient fields
+ * Demonstrates the Controller component of the MVC Pattern.
+ * Controllers handle HTTP requests, delegate to services for business logic,
+ * and return DTOs serialized as JSON.
  *
- * @author  Sergey L. Sundukovskiy
+ * @author Sergey L. Sundukovskiy
  * @version 1.0
- * @since   2025-11-11
+ * @since 2025-11-11
  */
 public class StoreController extends BaseServlet {
 
-    //TODO: Implement Controller for Store operations, part of the MVC Pattern
+    // Controller for Store operations, part of the MVC Pattern
 
     private final StoreService storeService;
 
@@ -43,14 +41,55 @@ public class StoreController extends BaseServlet {
      */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String storeId = extractResourceId(request);
+
+        try {
+            if (storeId == null) {
+                // Get all stores
+                Collection<Store> stores = storeService.getAllStores();
+                Collection<StoreDTO> dtos = stores.stream()
+                        .map(StoreMapper::toDto)
+                        .collect(Collectors.toList());
+                sendJsonResponse(response, dtos, HttpServletResponse.SC_OK);
+            } else {
+                // Get single store
+                Store store = storeService.showStore(storeId, null);
+                StoreDTO dto = StoreMapper.toDto(store);
+                sendJsonResponse(response, dto, HttpServletResponse.SC_OK);
+            }
+        } catch (StoreException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        }
     }
 
     /**
      * Handle POST requests - Create new store, returns StoreDTO
      * POST /api/v1/stores?storeId=xxx&name=xxx&address=xxx
+     * (name is treated as description in the Store model)
      */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String storeId = request.getParameter("storeId");
+        String address = request.getParameter("address");
+        String description = request.getParameter("description");
+
+        // Fallback: some docs use "name" instead of "description"
+        if (description == null || description.isBlank()) {
+            description = request.getParameter("name");
+        }
+
+        if (storeId == null || storeId.isBlank()) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "storeId is required");
+            return;
+        }
+
+        try {
+            Store store = storeService.provisionStore(storeId, description, address, null);
+            StoreDTO dto = StoreMapper.toDto(store);
+            sendJsonResponse(response, dto, HttpServletResponse.SC_CREATED);
+        } catch (StoreException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        }
     }
 
     /**
@@ -59,6 +98,22 @@ public class StoreController extends BaseServlet {
      */
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String storeId = extractResourceId(request);
+        if (storeId == null || storeId.isBlank()) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "storeId is required in the path");
+            return;
+        }
+
+        String description = request.getParameter("description");
+        String address = request.getParameter("address");
+
+        try {
+            Store updated = storeService.updateStore(storeId, description, address);
+            StoreDTO dto = StoreMapper.toDto(updated);
+            sendJsonResponse(response, dto, HttpServletResponse.SC_OK);
+        } catch (StoreException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        }
     }
 
     /**
@@ -67,5 +122,17 @@ public class StoreController extends BaseServlet {
      */
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String storeId = extractResourceId(request);
+        if (storeId == null || storeId.isBlank()) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "storeId is required in the path");
+            return;
+        }
+
+        try {
+            storeService.deleteStore(storeId);
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+        } catch (StoreException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        }
     }
 }
